@@ -19,6 +19,12 @@ Bitbucket API token for authentication and pushing. **As of September 9, 2025, a
 3. Create a new token with the following permissions:
    - **Repositories**: Read, Write, Admin
 
+Required token scopes:
+- `read:user:bitbucket`
+- `read:repository:bitbucket`
+- `write:repository:bitbucket`
+- `admin:repository:bitbucket`
+
 API tokens use HTTP Basic Authentication with your Bitbucket username and the token as the password.
 
 **API tokens require your Atlassian account email for authentication.** Provide it via the `email` input (recommended) or set `username` to your email.
@@ -29,8 +35,6 @@ For more information, see [Bitbucket's API token documentation](https://support.
 App password for authentication (deprecated). **Use `api-token` instead.** This parameter is maintained for backward compatibility but will be removed in a future version.
 
 If you still need to use an app password, create a new [App Password](https://bitbucket.org/account/settings/app-passwords/) with the following permissions:
-
-![Required App Password Permissions: Account - read, Repositories - read, write, admin](app-password-permissions.png)
 
 
 ## Optional Inputs
@@ -59,7 +63,7 @@ None
         with:
           fetch-depth: 0 # <-- clone with complete history
       - name: Push
-        uses: AndrewScott-Ingram/mirror-to-bitbucket-github-action@v3
+        uses: AndrewScott-Ingram/mirror-to-bitbucket-github-action@v4
         with:
           email: ${{ secrets.BITBUCKET_EMAIL }}
           api-token: ${{ secrets.BITBUCKET_API_TOKEN }}
@@ -71,7 +75,7 @@ None
         with:
           fetch-depth: 0 # <-- clone with complete history
       - name: Push
-        uses: AndrewScott-Ingram/mirror-to-bitbucket-github-action@v3
+        uses: AndrewScott-Ingram/mirror-to-bitbucket-github-action@v4
         with:
           username: mybitbucketusername
           email: my.name@example.com
@@ -92,13 +96,13 @@ Notes:
 - If you pass an API token as the 5th parameter, pass the email as the 6th parameter.
 - App passwords are deprecated; prefer API tokens.
 
-## Migration from v2 to v3
+## Migration from v2 to v4
 
 If you're upgrading from v2, you need to:
 
 1. Create a Bitbucket API token (see instructions above)
 2. Store the token as a GitHub secret (e.g., `BITBUCKET_API_TOKEN`)
-3. Update your workflow to use `api-token` instead of `password`:
+3. Ensure your workflow uses the new `email` input (or set `username` to your email):
 
 ```yaml
 # Before (v2)
@@ -106,9 +110,10 @@ If you're upgrading from v2, you need to:
   with:
     password: ${{ secrets.BITBUCKET_PASSWORD }}
 
-# After (v3)
-- uses: AndrewScott-Ingram/mirror-to-bitbucket-github-action@v3
+# After (v4)
+- uses: AndrewScott-Ingram/mirror-to-bitbucket-github-action@v4
   with:
+    email: ${{ secrets.BITBUCKET_EMAIL }}
     api-token: ${{ secrets.BITBUCKET_API_TOKEN }}
 ```
 
