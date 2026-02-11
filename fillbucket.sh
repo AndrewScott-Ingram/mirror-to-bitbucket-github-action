@@ -33,7 +33,7 @@ elif [ -n "$password" ]; then
     echo "Using app password authentication (deprecated, please migrate to API tokens)..."
     auth_credential="$password"
 else
-    echo "Error: Either 'password' or 'api-token' must be provided"
+    echo "Error: Either 'api-token' or 'password' (deprecated) must be provided"
     exit 1
 fi
 
