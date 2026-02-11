@@ -44,7 +44,9 @@ echo "Validating BitBucket credentials..."
 echo "Testing authentication for user: $username"
 if ! curl_output=$(curl --fail "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/user" 2>&1); then
     echo "ERROR: Authentication failed!"
-    echo "Details: $curl_output"
+    # Filter out credentials from error output
+    filtered_output=$(echo "$curl_output" | sed "s/$auth_credential/***/g")
+    echo "Details: $filtered_output"
     echo ""
     echo "Possible issues:"
     echo "  - Invalid username or API token/password"
@@ -63,7 +65,9 @@ if echo "$repo_check_output" | grep -q "error"; then
     echo "BitBucket repository \"$spacename/$reponame\" does NOT exist, creating it..."
     if ! create_output=$(curl -X POST --fail "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/repositories/$spacename/$reponame" -H "Content-Type: application/json" -d '{"scm": "git", "is_private": "true"}' 2>&1); then
         echo "ERROR: Failed to create repository!"
-        echo "Details: $create_output"
+        # Filter out credentials from error output
+        filtered_output=$(echo "$create_output" | sed "s/$auth_credential/***/g")
+        echo "Details: $filtered_output"
         echo ""
         echo "Possible issues:"
         echo "  - API token may lack 'Repositories: Admin' permission"
@@ -79,7 +83,9 @@ echo "Pushing to remote..."
 echo "Git URL format: https://$username:***@bitbucket.org/$spacename/$reponame.git"
 if ! git_output=$(git push https://$username:$auth_credential@bitbucket.org/$spacename/$reponame.git --all --force 2>&1); then
     echo "ERROR: Git push failed!"
-    echo "Details: $git_output"
+    # Filter out credentials from error output
+    filtered_output=$(echo "$git_output" | sed "s/$auth_credential/***/g")
+    echo "Details: $filtered_output"
     echo ""
     echo "Possible issues:"
     echo "  - API token may lack 'Repositories: Write' permission"
