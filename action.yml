@@ -8,7 +8,11 @@ inputs:
     required: true
     default: ${{ github.actor }}
   password:
-    required: true
+    required: false
+    description: 'App password (deprecated, use api-token instead)'
+  api-token:
+    required: false
+    description: 'Bitbucket API token with repository read, write, and admin permissions'
   repository:
     required: true
     default: ${{ github.event.repository.name }}
@@ -19,5 +23,5 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: ${{ github.action_path }}/fillbucket.sh "${{ inputs.username }}" "${{ inputs.password }}" "${{ inputs.repository }}" "${{ inputs.spacename }}"
+    - run: ${{ github.action_path }}/fillbucket.sh "${{ inputs.username }}" "${{ inputs.password }}" "${{ inputs.repository }}" "${{ inputs.spacename }}" "${{ inputs.api-token }}"
       shell: bash

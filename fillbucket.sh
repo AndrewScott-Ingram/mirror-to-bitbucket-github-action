@@ -15,8 +15,29 @@ if [ $# -ge 4 ]; then
     spacename="$4"
 fi
 
+# Get API token if provided (5th parameter)
+api_token=""
+if [ $# -ge 5 ] && [ -n "${5:-}" ]; then
+    api_token="$5"
+fi
 
-CURL_OPTS=(-u "$username:$password" --silent)
+# Determine authentication method
+if [ -n "$api_token" ]; then
+    # Use API token with Bearer authentication
+    echo "Using API token authentication..."
+    CURL_OPTS=(--silent -H "Authorization: Bearer $api_token")
+    GIT_USERNAME="x-token-auth"
+    GIT_PASSWORD="$api_token"
+elif [ -n "$password" ]; then
+    # Use app password with basic authentication (deprecated)
+    echo "Using app password authentication (deprecated, please migrate to API tokens)..."
+    CURL_OPTS=(-u "$username:$password" --silent)
+    GIT_USERNAME="$username"
+    GIT_PASSWORD="$password"
+else
+    echo "Error: Either 'password' or 'api-token' must be provided"
+    exit 1
+fi
 
 
 echo "Validating BitBucket credentials..."
@@ -35,4 +56,4 @@ curl "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/repositories/$spacename/$r
 )
 
 echo "Pushing to remote..."
-git push https://"$username:$password"@bitbucket.org/$spacename/$reponame.git --all --force
+git push https://"$GIT_USERNAME:$GIT_PASSWORD"@bitbucket.org/$spacename/$reponame.git --all --force
