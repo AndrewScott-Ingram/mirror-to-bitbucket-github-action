@@ -19,6 +19,8 @@ Bitbucket API token for authentication and pushing. **As of September 9, 2025, a
 3. Create a new token with the following permissions:
    - **Repositories**: Read, Write, Admin
 
+API tokens use HTTP Basic Authentication with your Bitbucket username and the token as the password.
+
 For more information, see [Bitbucket's API token documentation](https://support.atlassian.com/bitbucket-cloud/docs/using-api-tokens/).
 
 ### `password` (Deprecated)

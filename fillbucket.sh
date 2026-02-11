@@ -22,22 +22,22 @@ if [ $# -ge 5 ] && [ -n "${5:-}" ]; then
 fi
 
 # Determine authentication method
+# Both API tokens and app passwords use HTTP Basic Authentication
+# The only difference is the credential itself
 if [ -n "$api_token" ]; then
-    # Use API token with Bearer authentication
+    # Use API token with HTTP Basic Authentication
     echo "Using API token authentication..."
-    CURL_OPTS=(--silent -H "Authorization: Bearer $api_token")
-    GIT_USERNAME="x-token-auth"
-    GIT_PASSWORD="$api_token"
+    auth_credential="$api_token"
 elif [ -n "$password" ]; then
-    # Use app password with basic authentication (deprecated)
+    # Use app password with HTTP Basic Authentication (deprecated)
     echo "Using app password authentication (deprecated, please migrate to API tokens)..."
-    CURL_OPTS=(-u "$username:$password" --silent)
-    GIT_USERNAME="$username"
-    GIT_PASSWORD="$password"
+    auth_credential="$password"
 else
     echo "Error: Either 'password' or 'api-token' must be provided"
     exit 1
 fi
+
+CURL_OPTS=(-u "$username:$auth_credential" --silent)
 
 
 echo "Validating BitBucket credentials..."
@@ -56,4 +56,4 @@ curl "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/repositories/$spacename/$r
 )
 
 echo "Pushing to remote..."
-git push https://"$GIT_USERNAME:$GIT_PASSWORD"@bitbucket.org/$spacename/$reponame.git --all --force
+git push https://"$username:$auth_credential"@bitbucket.org/$spacename/$reponame.git --all --force
