@@ -7,6 +7,9 @@ inputs:
   username:
     required: true
     default: ${{ github.actor }}
+  email:
+    required: false
+    description: 'Atlassian account email for API token authentication'
   password:
     required: false
     description: 'App password (deprecated, use api-token instead)'
@@ -23,5 +26,5 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: ${{ github.action_path }}/fillbucket.sh "${{ inputs.username }}" "${{ inputs.password }}" "${{ inputs.repository }}" "${{ inputs.spacename }}" "${{ inputs.api-token }}"
+    - run: ${{ github.action_path }}/fillbucket.sh "${{ inputs.username }}" "${{ inputs.password }}" "${{ inputs.repository }}" "${{ inputs.spacename }}" "${{ inputs.api-token }}" "${{ inputs.email }}"
       shell: bash

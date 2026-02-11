@@ -15,19 +15,40 @@ if [ $# -ge 4 ]; then
     spacename="$4"
 fi
 
-# Get API token if provided (5th parameter)
+# Get API token or email if provided after spacename.
+# Param 5 can be either an API token or an email (when token is in param 2).
 api_token=""
+login_user="$username"
+git_login_user="$username"
 if [ $# -ge 5 ] && [ -n "${5:-}" ]; then
-    api_token="$5"
+    if [[ "${5:-}" == *"@"* ]]; then
+        login_user="$5"
+    else
+        api_token="$5"
+    fi
+fi
+# Param 6 can be the email when param 5 is the token.
+if [ $# -ge 6 ] && [ -n "${6:-}" ]; then
+    login_user="$6"
+fi
+# If username already looks like an email, use it.
+if [[ "$username" == *"@"* ]]; then
+    login_user="$username"
+    git_login_user="$username"
 fi
 
 # Determine authentication method
 # Both API tokens and app passwords use HTTP Basic Authentication
 # The only difference is the credential itself
+# Check if password starts with "ATATT" or "ATCTT" (Bitbucket API token pattern)
 if [ -n "$api_token" ]; then
-    # Use API token with HTTP Basic Authentication
+    # Use API token with HTTP Basic Authentication (from 5th parameter)
     echo "Using API token authentication..."
     auth_credential="$api_token"
+elif [[ "$password" == ATATT* ]] || [[ "$password" == ATCTT* ]]; then
+    # Password looks like an API token (from 2nd parameter)
+    echo "Using API token authentication..."
+    auth_credential="$password"
 elif [ -n "$password" ]; then
     # Use app password with HTTP Basic Authentication (deprecated)
     echo "Using app password authentication (deprecated, please migrate to API tokens)..."
@@ -37,11 +58,16 @@ else
     exit 1
 fi
 
-CURL_OPTS=(-u "$username:$auth_credential" --silent)
+if { [ -n "$api_token" ] || [[ "$password" == ATATT* ]] || [[ "$password" == ATCTT* ]]; } && [[ "$login_user" != *"@"* ]]; then
+    echo "WARNING: API tokens require Atlassian account email for authentication."
+    echo "         Pass email as 6th parameter or use email as the username."
+fi
+
+CURL_OPTS=(-u "$login_user:$auth_credential" --silent)
 
 
 echo "Validating BitBucket credentials..."
-echo "Testing authentication for user: $username"
+echo "Testing authentication for user: $login_user"
 if ! curl_output=$(curl --fail "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/user" 2>&1); then
     echo "ERROR: Authentication failed!"
     # Filter out credentials from error output
@@ -80,8 +106,12 @@ else
 fi
 
 echo "Pushing to remote..."
-echo "Git URL format: https://$username:***@bitbucket.org/$spacename/$reponame.git"
-if ! git_output=$(git push https://$username:$auth_credential@bitbucket.org/$spacename/$reponame.git --all --force 2>&1); then
+remote_url="https://bitbucket.org/$spacename/$reponame.git"
+echo "Git URL format: https://***@bitbucket.org/$spacename/$reponame.git"
+# Use Authorization header to avoid issues with @ in email username.
+auth_header=$(printf '%s' "$git_login_user:$auth_credential" | base64 | tr -d '\r\n')
+echo "Git auth user: $git_login_user"
+if ! git_output=$(git -c http.extraHeader="Authorization: Basic $auth_header" push "$remote_url" --all --force 2>&1); then
     echo "ERROR: Git push failed!"
     # Filter out credentials from error output
     filtered_output=$(echo "$git_output" | sed "s/$auth_credential/***/g")

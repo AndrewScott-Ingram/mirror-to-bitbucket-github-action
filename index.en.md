@@ -21,6 +21,8 @@ Bitbucket API token for authentication and pushing. **As of September 9, 2025, a
 
 API tokens use HTTP Basic Authentication with your Bitbucket username and the token as the password.
 
+**API tokens require your Atlassian account email for authentication.** Provide it via the `email` input (recommended) or set `username` to your email.
+
 For more information, see [Bitbucket's API token documentation](https://support.atlassian.com/bitbucket-cloud/docs/using-api-tokens/).
 
 ### `password` (Deprecated)
@@ -34,6 +36,11 @@ If you still need to use an app password, create a new [App Password](https://bi
 ## Optional Inputs
 ### `username`
 Username to use on Bitbucket for 1) authentication and as 2) workspace name. Default: GitHub user name.
+
+### `email`
+Atlassian account email used for API token authentication. Required when using `api-token` unless `username` is already set to an email address.
+
+**When using `api-token`, set `username` to your Atlassian account email.** Bitbucket API tokens require the email for authentication (see Atlassian docs linked above).
 
 ### `repository`
 Name of the repository on Bitbucket. If it does not exist, it is created automatically. Default: GitHub repository name.
@@ -54,6 +61,7 @@ None
       - name: Push
         uses: AndrewScott-Ingram/mirror-to-bitbucket-github-action@v3
         with:
+          email: ${{ secrets.BITBUCKET_EMAIL }}
           api-token: ${{ secrets.BITBUCKET_API_TOKEN }}
 
 ## Example with all parameters
@@ -65,10 +73,24 @@ None
       - name: Push
         uses: AndrewScott-Ingram/mirror-to-bitbucket-github-action@v3
         with:
-          username: mycrazybbusername
+          username: mybitbucketusername
+          email: my.name@example.com
           spacename: teamspace
           repository: bestrepo
           api-token: ${{ secrets.BITBUCKET_API_TOKEN }}
+
+## Local usage (fillbucket.sh)
+
+If you run the script directly, use this parameter order:
+
+```
+./fillbucket.sh <username> <password-or-api-token> <repository> <spacename> [email-or-api-token] [email]
+```
+
+Notes:
+- If you pass an API token as the 2nd parameter, pass the Atlassian account email as the 5th parameter.
+- If you pass an API token as the 5th parameter, pass the email as the 6th parameter.
+- App passwords are deprecated; prefer API tokens.
 
 ## Migration from v2 to v3
 
