@@ -41,19 +41,50 @@ CURL_OPTS=(-u "$username:$auth_credential" --silent)
 
 
 echo "Validating BitBucket credentials..."
-curl --fail "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/user" > /dev/null || (
-    echo "... failed. Most likely, the provided credentials are invalid. Terminating..."
+echo "Testing authentication for user: $username"
+if ! curl_output=$(curl --fail "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/user" 2>&1); then
+    echo "ERROR: Authentication failed!"
+    echo "Details: $curl_output"
+    echo ""
+    echo "Possible issues:"
+    echo "  - Invalid username or API token/password"
+    echo "  - API token may not have required permissions"
+    echo "  - Network connectivity issues"
     exit 1
-)
+fi
+echo "✓ Authentication successful"
 
 
 reponame=$(echo $reponame | tr '[:upper:]' '[:lower:]')
 
 echo "Checking if BitBucket repository \"$spacename/$reponame\" exists..."
-curl "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/repositories/$spacename/$reponame" | grep "error" > /dev/null && (
+repo_check_output=$(curl "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/repositories/$spacename/$reponame" 2>&1)
+if echo "$repo_check_output" | grep -q "error"; then
     echo "BitBucket repository \"$spacename/$reponame\" does NOT exist, creating it..."
-    curl -X POST --fail "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/repositories/$spacename/$reponame" -H "Content-Type: application/json" -d '{"scm": "git", "is_private": "true"}' > /dev/null
-)
+    if ! create_output=$(curl -X POST --fail "${CURL_OPTS[@]}" "https://api.bitbucket.org/2.0/repositories/$spacename/$reponame" -H "Content-Type: application/json" -d '{"scm": "git", "is_private": "true"}' 2>&1); then
+        echo "ERROR: Failed to create repository!"
+        echo "Details: $create_output"
+        echo ""
+        echo "Possible issues:"
+        echo "  - API token may lack 'Repositories: Admin' permission"
+        echo "  - Workspace/spacename may not exist or you may not have access"
+        exit 1
+    fi
+    echo "✓ Repository created successfully"
+else
+    echo "✓ Repository exists"
+fi
 
 echo "Pushing to remote..."
-git push https://"$username:$auth_credential"@bitbucket.org/$spacename/$reponame.git --all --force
+echo "Git URL format: https://$username:***@bitbucket.org/$spacename/$reponame.git"
+if ! git_output=$(git push https://$username:$auth_credential@bitbucket.org/$spacename/$reponame.git --all --force 2>&1); then
+    echo "ERROR: Git push failed!"
+    echo "Details: $git_output"
+    echo ""
+    echo "Possible issues:"
+    echo "  - API token may lack 'Repositories: Write' permission"
+    echo "  - You may not have push access to this repository"
+    echo "  - Repository name or workspace may be incorrect"
+    exit 1
+fi
+echo "✓ Push successful"
